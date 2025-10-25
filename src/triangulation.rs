@@ -38,9 +38,17 @@ impl<'a> Triangulation<'a> {
     /// * `height_data` - Height values of the grid.
     /// * `width` - The width of the grid.
     /// * `height` - The height of the grid.
-    pub fn new(height_data: &'a [f64], width: usize, height: usize) -> Self {
+    pub fn try_new(
+        height_data: &'a [f64],
+        width: usize,
+        height: usize,
+    ) -> TriangulationResult<Self> {
+        if height_data.len() != width * height {
+            return Err(TriangulationError::InvalidDataLengthError);
+        }
+
         let initial_queue_size = width * height / 4;
-        Self {
+        Ok(Self {
             height_data,
             width,
             height,
@@ -49,7 +57,7 @@ impl<'a> Triangulation<'a> {
             half_edges: Vec::new(),
             candidate_points: Vec::new(),
             priority_queue: PriorityQueue::new(initial_queue_size),
-        }
+        })
     }
 
     /// Run the triangulation process until the maximum error is below the specified threshold.
