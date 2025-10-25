@@ -1,0 +1,13 @@
+{
+  "type": "module",
+  "scripts": {
+    "generate_fixtures": "node fixtures/delatin_generate.js"
+  },
+  "volta": {
+    "node": "22.21.0",
+    "npm": "11.6.2"
+  },
+  "dependencies": {
+    "delatin": "^0.2.0"
+  }
+}
