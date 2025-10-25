@@ -9,3 +9,5 @@ pub enum TriangulationError {
     #[error("Length of heights data is not equal to width * height.")]
     InvalidDataLengthError,
 }
+
+pub type TriangulationResult<T> = std::result::Result<T, TriangulationError>;

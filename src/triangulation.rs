@@ -1,4 +1,4 @@
-use crate::error::TriangulationError;
+use crate::error::{TriangulationError, TriangulationResult};
 use crate::queue::PriorityQueue;
 use crate::utils::{get_signed_area, is_point_in_circumcircle};
 
@@ -32,17 +32,13 @@ enum AddTriangleStrategy {
 }
 
 impl<'a> Triangulation<'a> {
-    /// Creates a new `Triangulation` with the given height data, width, and height.
+    /// Create a new `Triangulation` with the given height data, width, and height.
     ///
     /// # Arguments
     ///
     /// * `height_data` - Height values of the grid.
     /// * `width` - The width of the grid.
     /// * `height` - The height of the grid.
-    ///
-    /// # Returns
-    ///
-    /// A new `Triangulation` instance.
     pub fn new(height_data: &'a [Height], width: usize, height: usize) -> Self {
         let initial_queue_size = width * height / 4;
         Self {
@@ -57,7 +53,7 @@ impl<'a> Triangulation<'a> {
         }
     }
 
-    /// Runs the triangulation process until the maximum error is below the specified threshold.
+    /// Run the triangulation process until the maximum error is below the specified threshold.
     ///
     /// # Arguments
     ///
@@ -74,11 +70,7 @@ impl<'a> Triangulation<'a> {
     /// - `InvalidDataLengthError` - If the length of the height data does not match the width and height of the grid.
     /// - `MaxErrorRetrievalError` - If the maximum error is not found in the priority queue.
     /// - `EmptyQueueError` - If the priority queue is empty during triangulation.
-    ///
-    pub fn run(
-        &mut self,
-        max_error: f64,
-    ) -> Result<(Vec<Point>, Vec<Triangle>), TriangulationError> {
+    pub fn run(&mut self, max_error: f64) -> TriangulationResult<(Vec<Point>, Vec<Triangle>)> {
         let initial_x = self.width - 1;
         let initial_y = self.height - 1;
 
@@ -124,7 +116,7 @@ impl<'a> Triangulation<'a> {
         Ok((self.get_vertext_points(), self.get_triangle_indices()))
     }
 
-    pub fn refine(&mut self) -> Result<(), TriangulationError> {
+    pub fn refine(&mut self) -> TriangulationResult<()> {
         self.step()?;
         self.flush();
 
@@ -161,7 +153,7 @@ impl<'a> Triangulation<'a> {
         points
     }
 
-    fn step(&mut self) -> Result<(), TriangulationError> {
+    fn step(&mut self) -> TriangulationResult<()> {
         // pop triangle with highest error from priority queue
         let queued_triangle = self
             .priority_queue
