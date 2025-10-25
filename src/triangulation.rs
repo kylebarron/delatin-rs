@@ -4,12 +4,11 @@ use crate::utils::{get_signed_area, is_point_in_circumcircle};
 
 type Point = (usize, usize);
 type Triangle = (usize, usize, usize);
-type Height = f64;
 
 #[derive(Debug, Clone)]
 pub struct Triangulation<'a> {
     /// Height data of the grid
-    height_data: &'a [Height],
+    height_data: &'a [f64],
     /// Width of the grid
     width: usize,
     /// Height of the grid
@@ -39,16 +38,16 @@ impl<'a> Triangulation<'a> {
     /// * `height_data` - Height values of the grid.
     /// * `width` - The width of the grid.
     /// * `height` - The height of the grid.
-    pub fn new(height_data: &'a [Height], width: usize, height: usize) -> Self {
+    pub fn new(height_data: &'a [f64], width: usize, height: usize) -> Self {
         let initial_queue_size = width * height / 4;
         Self {
             height_data,
             width,
             height,
-            vertex_points: Vec::default(),
-            triangles: Vec::default(),
-            half_edges: Vec::default(),
-            candidate_points: Vec::default(),
+            vertex_points: Vec::new(),
+            triangles: Vec::new(),
+            half_edges: Vec::new(),
+            candidate_points: Vec::new(),
             priority_queue: PriorityQueue::new(initial_queue_size),
         }
     }
@@ -488,7 +487,7 @@ impl<'a> Triangulation<'a> {
         self.priority_queue.push(triangle_index, max_error);
     }
 
-    fn height_at(&self, point: Point) -> Height {
+    fn height_at(&self, point: Point) -> f64 {
         self.height_data[self.width * point.1 + point.0]
     }
 
