@@ -463,7 +463,8 @@ impl<'a> Triangulation<'a> {
         self.priority_queue.push(triangle_index, max_error);
     }
 
-    fn height_at(&self, point: Point) -> f64 {
+    /// height value at a given position
+    pub fn height_at(&self, point: Point) -> f64 {
         self.height_data[self.width * point.1 + point.0]
     }
 
