@@ -12,6 +12,7 @@ pub struct Triangulation<'a> {
     /// Width of the grid
     width: usize,
     /// Height of the grid
+    #[expect(dead_code)]
     height: usize,
     /// Points of vertices
     vertex_points: Vec<Point>,
@@ -48,7 +49,7 @@ impl<'a> Triangulation<'a> {
         }
 
         let initial_queue_size = width * height / 4;
-        Ok(Self {
+        let mut slf = Self {
             height_data,
             width,
             height,
@@ -57,7 +58,28 @@ impl<'a> Triangulation<'a> {
             half_edges: Vec::new(),
             candidate_points: Vec::new(),
             priority_queue: PriorityQueue::new(initial_queue_size),
-        })
+        };
+
+        let initial_x = width - 1;
+        let initial_y = height - 1;
+
+        let p0 = slf.add_point((0, 0));
+        let p1 = slf.add_point((initial_x, 0));
+        let p2 = slf.add_point((0, initial_y));
+        let p3 = slf.add_point((initial_x, initial_y));
+
+        // add initial two triangles to start with
+        let tri0 = slf.add_triangle((p3, p0, p2), None, None, None, AddTriangleStrategy::Create);
+        slf.add_triangle(
+            (p0, p3, p1),
+            Some(tri0),
+            None,
+            None,
+            AddTriangleStrategy::Create,
+        );
+        slf.flush();
+
+        Ok(slf)
     }
 
     /// Run the triangulation process until the maximum error is below the specified threshold.
@@ -78,39 +100,6 @@ impl<'a> Triangulation<'a> {
     /// - `MaxErrorRetrievalError` - If the maximum error is not found in the priority queue.
     /// - `EmptyQueueError` - If the priority queue is empty during triangulation.
     pub fn run(&mut self, max_error: f64) -> TriangulationResult<(Vec<Point>, Vec<Triangle>)> {
-        let initial_x = self.width - 1;
-        let initial_y = self.height - 1;
-
-        let vertex_a_point_index = self.add_point((0, 0));
-        let vertex_b_point_index = self.add_point((initial_x, 0));
-        let vertex_c_point_index = self.add_point((initial_x, initial_y));
-        let vertex_d_point_index = self.add_point((0, initial_y));
-
-        // add initial two triangles to start with
-        let trinagle_0 = self.add_triangle(
-            (
-                vertex_c_point_index,
-                vertex_a_point_index,
-                vertex_d_point_index,
-            ),
-            None,
-            None,
-            None,
-            AddTriangleStrategy::Create,
-        );
-        let _triangle_1 = self.add_triangle(
-            (
-                vertex_a_point_index,
-                vertex_c_point_index,
-                vertex_b_point_index,
-            ),
-            Some(trinagle_0),
-            None,
-            None,
-            AddTriangleStrategy::Create,
-        );
-        self.flush();
-
         while self
             .priority_queue
             .get_max_error()
