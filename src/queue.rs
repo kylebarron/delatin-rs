@@ -13,7 +13,7 @@ pub(crate) struct PriorityQueue {
 }
 
 impl PriorityQueue {
-    pub fn new(initial_queue_size: usize) -> Self {
+    pub(crate) fn new(initial_queue_size: usize) -> Self {
         Self {
             triangle_queue_indices: vec![None; initial_queue_size],
             pending_triangle_indices: Vec::new(),
@@ -22,20 +22,20 @@ impl PriorityQueue {
         }
     }
 
-    pub fn add_pending_triangle(&mut self, t: usize) {
+    pub(crate) fn add_pending_triangle(&mut self, t: usize) {
         self.pending_triangle_indices.push(t);
     }
 
-    pub fn consume_pending_triangles(&mut self) -> Vec<usize> {
+    pub(crate) fn consume_pending_triangles(&mut self) -> Vec<usize> {
         self.pending_triangle_indices.drain(..).collect()
     }
 
     /// Get the max error (first element) of the priority queue
-    pub fn get_max_error(&self) -> Option<f64> {
+    pub(crate) fn get_max_error(&self) -> Option<f64> {
         self.triangle_errors.first().copied()
     }
 
-    pub fn push(&mut self, triangle_index: usize, error: f64) {
+    pub(crate) fn push(&mut self, triangle_index: usize, error: f64) {
         let queue_length = self.triangle_queue.len();
 
         if triangle_index >= self.triangle_queue_indices.len() {
@@ -48,7 +48,7 @@ impl PriorityQueue {
         self.up(queue_length);
     }
 
-    pub fn pop(&mut self) -> Option<usize> {
+    pub(crate) fn pop(&mut self) -> Option<usize> {
         let last_item_index = self.triangle_queue.len() - 1;
         self.swap(0, last_item_index);
         self.down(0, last_item_index);
@@ -56,7 +56,7 @@ impl PriorityQueue {
         self.pop_back()
     }
 
-    pub fn remove(&mut self, requested_triangle_index: usize) {
+    pub(crate) fn remove(&mut self, requested_triangle_index: usize) {
         let Some(index) = self
             .triangle_queue_indices
             .get(requested_triangle_index)
