@@ -43,19 +43,20 @@ fn main() {
     let heights = parse_png("./fixtures/14-2625-6369.png");
 
     let mut delatin = Triangulation::try_new(&heights, 512, 512).unwrap();
-    let (coords, triangles) = delatin.run(0.2).unwrap();
+    delatin.run(0.2).unwrap();
+
+    // TODO: make coords flat
+    let coords = delatin.coords();
+    let triangles = delatin.triangles();
 
     assert_eq!(coords.len(), 16257);
-    assert_eq!(triangles.len(), 32147);
+    assert_eq!(triangles.len() / 3, 32147);
 
     let flat_coords: Vec<u32> = coords
         .iter()
         .flat_map(|p| vec![p.0 as u32, p.1 as u32])
         .collect();
-    let flat_triangles: Vec<u32> = triangles
-        .iter()
-        .flat_map(|t| vec![t.0 as u32, t.1 as u32, t.2 as u32])
-        .collect();
+    let flat_triangles: Vec<u32> = triangles.iter().map(|v| *v as u32).collect();
 
     let expected_coords = read_u32_file("./fixtures/coords_from_js.bin");
     let expected_triangles = read_u32_file("./fixtures/triangles_from_js.bin");
