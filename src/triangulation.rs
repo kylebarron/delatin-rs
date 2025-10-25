@@ -99,7 +99,7 @@ impl<'a> Triangulation<'a> {
     /// - `InvalidDataLengthError` - If the length of the height data does not match the width and height of the grid.
     /// - `MaxErrorRetrievalError` - If the maximum error is not found in the priority queue.
     /// - `EmptyQueueError` - If the priority queue is empty during triangulation.
-    pub fn run(&mut self, max_error: f64) -> TriangulationResult<(Vec<Point>, Vec<Triangle>)> {
+    pub fn run(&mut self, max_error: f64) -> TriangulationResult<()> {
         while self
             .priority_queue
             .get_max_error()
@@ -109,9 +109,10 @@ impl<'a> Triangulation<'a> {
             self.refine()?;
         }
 
-        Ok((self.get_vertext_points(), self.get_triangle_indices()))
+        Ok(())
     }
 
+    /// refine the mesh with a single point insertion
     pub fn refine(&mut self) -> TriangulationResult<()> {
         self.step()?;
         self.flush();
@@ -119,34 +120,24 @@ impl<'a> Triangulation<'a> {
         Ok(())
     }
 
-    fn get_triangle_indices(&self) -> Vec<(usize, usize, usize)> {
-        let mut triangles = Vec::new();
-
-        for i in 0..self.triangles.len() / 3 {
-            let vertex_a_point_index = self.triangles[i * 3];
-            let vertex_b_point_index = self.triangles[i * 3 + 1];
-            let vertex_c_point_index = self.triangles[i * 3 + 2];
-
-            triangles.push((
-                vertex_a_point_index,
-                vertex_b_point_index,
-                vertex_c_point_index,
-            ));
-        }
-
-        triangles
+    /// max error of the current mesh
+    pub fn get_max_error(&self) -> TriangulationResult<f64> {
+        self.priority_queue
+            .get_max_error()
+            .ok_or(TriangulationError::MaxErrorRetrievalError)
     }
 
-    fn get_vertext_points(&self) -> Vec<(usize, usize)> {
-        let mut points = Vec::new();
+    /// vertex coordinates (x, y)
+    pub fn coords(&self) -> &[Point] {
+        &self.vertex_points
+    }
 
-        for i in 0..self.vertex_points.len() {
-            let vertex_point = self.vertex_points[i];
-
-            points.push(vertex_point);
-        }
-
-        points
+    /// mesh triangle indices
+    ///
+    /// This slice is exactly divisible by 3, where each consecutive triplet of indices represents
+    /// a triangle.
+    pub fn triangles(&self) -> &[usize] {
+        &self.triangles
     }
 
     fn step(&mut self) -> TriangulationResult<()> {
