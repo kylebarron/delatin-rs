@@ -373,22 +373,10 @@ impl<'a> Triangulation<'a> {
         let point_c = self.vertex_points[vertex_c_point_index];
 
         // triangle bounding box
-        let min_x = *[point_a.0, point_b.0, point_c.0]
-            .iter()
-            .min()
-            .expect("No items to get min from.");
-        let min_y = *[point_a.1, point_b.1, point_c.1]
-            .iter()
-            .min()
-            .expect("No items to get min from.");
-        let max_x = *[point_a.0, point_b.0, point_c.0]
-            .iter()
-            .max()
-            .expect("No items to get max from.");
-        let max_y = *[point_a.1, point_b.1, point_c.1]
-            .iter()
-            .max()
-            .expect("No items to get max from.");
+        let min_x = point_a.0.min(point_b.0).min(point_c.0);
+        let min_y = point_a.1.min(point_b.1).min(point_c.1);
+        let max_x = point_a.0.max(point_b.0).max(point_c.0);
+        let max_y = point_a.1.max(point_b.1).max(point_c.1);
 
         let triangle_abc_signed_area = get_signed_area(point_a, point_b, point_c);
         let mut triangle_bcmin_signed_area = get_signed_area(point_b, point_c, (min_x, min_y));
