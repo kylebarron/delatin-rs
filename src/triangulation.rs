@@ -7,7 +7,7 @@ type Triangle = (usize, usize, usize);
 type Height = f64;
 
 #[derive(Debug, Clone)]
-pub(crate) struct Triangulation<'a> {
+pub struct Triangulation<'a> {
     /// Height data of the grid
     height_data: &'a [Height],
     /// Width of the grid
@@ -32,7 +32,7 @@ enum AddTriangleStrategy {
 }
 
 impl<'a> Triangulation<'a> {
-    /// Creates a new instance of `Triangulation` with the given height data, width, and height.
+    /// Creates a new `Triangulation` with the given height data, width, and height.
     ///
     /// # Arguments
     ///
@@ -43,7 +43,7 @@ impl<'a> Triangulation<'a> {
     /// # Returns
     ///
     /// A new `Triangulation` instance.
-    pub(crate) fn new(height_data: &'a [Height], width: usize, height: usize) -> Self {
+    pub fn new(height_data: &'a [Height], width: usize, height: usize) -> Self {
         let initial_queue_size = width * height / 4;
         Self {
             height_data,
@@ -75,7 +75,7 @@ impl<'a> Triangulation<'a> {
     /// - `MaxErrorRetrievalError` - If the maximum error is not found in the priority queue.
     /// - `EmptyQueueError` - If the priority queue is empty during triangulation.
     ///
-    pub(crate) fn run(
+    pub fn run(
         &mut self,
         max_error: f64,
     ) -> Result<(Vec<Point>, Vec<Triangle>), TriangulationError> {
@@ -124,6 +124,13 @@ impl<'a> Triangulation<'a> {
         Ok((self.get_vertext_points(), self.get_triangle_indices()))
     }
 
+    pub fn refine(&mut self) -> Result<(), TriangulationError> {
+        self.step()?;
+        self.flush();
+
+        Ok(())
+    }
+
     fn get_triangle_indices(&self) -> Vec<(usize, usize, usize)> {
         let mut triangles = Vec::new();
 
@@ -152,13 +159,6 @@ impl<'a> Triangulation<'a> {
         }
 
         points
-    }
-
-    fn refine(&mut self) -> Result<(), TriangulationError> {
-        self.step()?;
-        self.flush();
-
-        Ok(())
     }
 
     fn step(&mut self) -> Result<(), TriangulationError> {
