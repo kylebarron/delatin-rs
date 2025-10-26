@@ -45,7 +45,20 @@ impl From<Point> for (usize, usize) {
     }
 }
 
-type Triangle = (usize, usize, usize);
+/// A triangle formed by three vertex indices.
+///
+/// Because of the bytemuch Pod and Zeroable derives, we can safely cast a `Vec<Triangle>` to a
+/// `Vec<usize>`. Therefore, for now, this struct is only internal.
+#[repr(C)]
+#[derive(Debug, Copy, Clone, PartialEq, bytemuck::Pod, bytemuck::Zeroable)]
+struct Triangle(usize, usize, usize);
+
+impl Triangle {
+    #[inline]
+    fn new(a: usize, b: usize, c: usize) -> Self {
+        Self(a, b, c)
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct Triangulation<'a> {
@@ -111,9 +124,15 @@ impl<'a> Triangulation<'a> {
         let p3 = slf.add_point(Point::new(initial_x, initial_y));
 
         // add initial two triangles to start with
-        let tri0 = slf.add_triangle((p3, p0, p2), None, None, None, AddTriangleStrategy::Create);
+        let tri0 = slf.add_triangle(
+            Triangle::new(p3, p0, p2),
+            None,
+            None,
+            None,
+            AddTriangleStrategy::Create,
+        );
         slf.add_triangle(
-            (p0, p3, p1),
+            Triangle::new(p0, p3, p1),
             Some(tri0),
             None,
             None,
@@ -217,21 +236,21 @@ impl<'a> Triangulation<'a> {
             let half_edge_c = self.half_edges[vertex_c_triangle_index];
 
             let new_triangle_0 = self.add_triangle(
-                (vertex_a_point_index, vertex_b_point_index, new_vertex_index),
+                Triangle::new(vertex_a_point_index, vertex_b_point_index, new_vertex_index),
                 half_edge_a,
                 None,
                 None,
                 AddTriangleStrategy::Update(vertex_a_triangle_index),
             );
             let new_triangle_1 = self.add_triangle(
-                (vertex_b_point_index, vertex_c_point_index, new_vertex_index),
+                Triangle::new(vertex_b_point_index, vertex_c_point_index, new_vertex_index),
                 half_edge_b,
                 None,
                 Some(new_triangle_0 + 1),
                 AddTriangleStrategy::Create,
             );
             let new_triangle_2 = self.add_triangle(
-                (vertex_c_point_index, vertex_a_point_index, new_vertex_index),
+                Triangle::new(vertex_c_point_index, vertex_a_point_index, new_vertex_index),
                 half_edge_c,
                 Some(new_triangle_0 + 2),
                 Some(new_triangle_1 + 1),
@@ -272,7 +291,7 @@ impl<'a> Triangulation<'a> {
                 self.priority_queue.remove(adjacent_triangle_base_index / 3);
 
                 let new_triangle_0 = self.add_triangle(
-                    (
+                    Triangle::new(
                         vertex_b_point_index,
                         collinear_vertex_point_index,
                         new_vertex_index,
@@ -283,21 +302,21 @@ impl<'a> Triangulation<'a> {
                     AddTriangleStrategy::Update(collinear_base_index),
                 );
                 let new_triangle_1 = self.add_triangle(
-                    (collinear_vertex_point_index, vertex1, new_vertex_index),
+                    Triangle::new(collinear_vertex_point_index, vertex1, new_vertex_index),
                     half_edge_adjacent_right,
                     None,
                     Some(new_triangle_0 + 1),
                     AddTriangleStrategy::Update(adjacent_triangle_base_index),
                 );
                 let new_triangle_2 = self.add_triangle(
-                    (vertex1, vertex_a_point_index, new_vertex_index),
+                    Triangle::new(vertex1, vertex_a_point_index, new_vertex_index),
                     half_edge_adjacent_left,
                     None,
                     Some(new_triangle_1 + 1),
                     AddTriangleStrategy::Create,
                 );
                 let new_triangle_3 = self.add_triangle(
-                    (vertex_a_point_index, vertex_b_point_index, new_vertex_index),
+                    Triangle::new(vertex_a_point_index, vertex_b_point_index, new_vertex_index),
                     half_edge_a,
                     Some(new_triangle_0 + 2),
                     Some(new_triangle_2 + 1),
@@ -311,7 +330,7 @@ impl<'a> Triangulation<'a> {
             }
             None => {
                 let new_triangle_0 = self.add_triangle(
-                    (
+                    Triangle::new(
                         new_vertex_index,
                         vertex_b_point_index,
                         collinear_vertex_point_index,
@@ -322,7 +341,7 @@ impl<'a> Triangulation<'a> {
                     AddTriangleStrategy::Update(collinear_base_index),
                 );
                 let new_triangle_1 = self.add_triangle(
-                    (vertex_b_point_index, new_vertex_index, vertex_a_point_index),
+                    Triangle::new(vertex_b_point_index, new_vertex_index, vertex_a_point_index),
                     Some(new_triangle_0),
                     None,
                     half_edge_a,
@@ -379,14 +398,14 @@ impl<'a> Triangulation<'a> {
         self.priority_queue.remove(adjacent_triangle_base_index / 3);
 
         let new_triangle_0 = self.add_triangle(
-            (vertex_0, vertex_1, vertex_left),
+            Triangle::new(vertex_0, vertex_1, vertex_left),
             None,
             adjacent_half_edge_left,
             half_edge_left,
             AddTriangleStrategy::Update(requested_triangle_base_index),
         );
         let new_triangle_1 = self.add_triangle(
-            (vertex_1, vertex_0, vertex_right),
+            Triangle::new(vertex_1, vertex_0, vertex_right),
             Some(new_triangle_0),
             half_edge_right,
             adjacent_half_edge_right,
