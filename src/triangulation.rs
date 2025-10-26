@@ -2,7 +2,49 @@ use crate::error::{TriangulationError, TriangulationResult};
 use crate::queue::PriorityQueue;
 use crate::utils::{get_signed_area, is_point_in_circumcircle};
 
-type Point = (usize, usize);
+/// A 2D vertex with x and y coordinates.
+///
+/// Because of the bytemuch Pod and Zeroable derives, we can safely cast a `Vec<Point>` to a
+/// `Vec<usize>`. Therefore, for now, this struct is only internal.
+#[repr(C)]
+#[derive(Debug, Copy, Clone, PartialEq, bytemuck::Pod, bytemuck::Zeroable)]
+pub(crate) struct Point {
+    x: usize,
+    y: usize,
+}
+
+impl Point {
+    #[inline]
+    fn new(x: usize, y: usize) -> Self {
+        Self { x, y }
+    }
+
+    #[inline]
+    pub(crate) fn x(&self) -> usize {
+        self.x
+    }
+
+    #[inline]
+    pub(crate) fn y(&self) -> usize {
+        self.y
+    }
+}
+
+impl From<(usize, usize)> for Point {
+    fn from(value: (usize, usize)) -> Self {
+        Self {
+            x: value.0,
+            y: value.1,
+        }
+    }
+}
+
+impl From<Point> for (usize, usize) {
+    fn from(value: Point) -> Self {
+        (value.x, value.y)
+    }
+}
+
 type Triangle = (usize, usize, usize);
 
 #[derive(Debug, Clone)]
@@ -63,10 +105,10 @@ impl<'a> Triangulation<'a> {
         let initial_x = width - 1;
         let initial_y = height - 1;
 
-        let p0 = slf.add_point((0, 0));
-        let p1 = slf.add_point((initial_x, 0));
-        let p2 = slf.add_point((0, initial_y));
-        let p3 = slf.add_point((initial_x, initial_y));
+        let p0 = slf.add_point(Point::new(0, 0));
+        let p1 = slf.add_point(Point::new(initial_x, 0));
+        let p2 = slf.add_point(Point::new(0, initial_y));
+        let p3 = slf.add_point(Point::new(initial_x, initial_y));
 
         // add initial two triangles to start with
         let tri0 = slf.add_triangle((p3, p0, p2), None, None, None, AddTriangleStrategy::Create);
@@ -128,8 +170,8 @@ impl<'a> Triangulation<'a> {
     }
 
     /// vertex coordinates (x, y)
-    pub fn coords(&self) -> &[Point] {
-        &self.vertex_points
+    pub fn coords(&self) -> &[usize] {
+        bytemuck::cast_slice(&self.vertex_points)
     }
 
     /// mesh triangle indices
@@ -373,30 +415,36 @@ impl<'a> Triangulation<'a> {
         let point_c = self.vertex_points[vertex_c_point_index];
 
         // triangle bounding box
-        let min_x = point_a.0.min(point_b.0).min(point_c.0);
-        let min_y = point_a.1.min(point_b.1).min(point_c.1);
-        let max_x = point_a.0.max(point_b.0).max(point_c.0);
-        let max_y = point_a.1.max(point_b.1).max(point_c.1);
+        let min_x = point_a.x().min(point_b.x()).min(point_c.x());
+        let min_y = point_a.y().min(point_b.y()).min(point_c.y());
+        let max_x = point_a.x().max(point_b.x()).max(point_c.x());
+        let max_y = point_a.y().max(point_b.y()).max(point_c.y());
 
         let triangle_abc_signed_area = get_signed_area(point_a, point_b, point_c);
-        let mut triangle_bcmin_signed_area = get_signed_area(point_b, point_c, (min_x, min_y));
-        let mut triangle_camin_signed_area = get_signed_area(point_c, point_a, (min_x, min_y));
-        let mut triangle_abmin_signed_area = get_signed_area(point_a, point_b, (min_x, min_y));
+        let mut triangle_bcmin_signed_area =
+            get_signed_area(point_b, point_c, Point::new(min_x, min_y));
+        let mut triangle_camin_signed_area =
+            get_signed_area(point_c, point_a, Point::new(min_x, min_y));
+        let mut triangle_abmin_signed_area =
+            get_signed_area(point_a, point_b, Point::new(min_x, min_y));
 
-        let ba_y_diff = point_b.1 as isize - point_a.1 as isize;
-        let ab_x_diff = point_a.0 as isize - point_b.0 as isize;
-        let cb_y_diff = point_c.1 as isize - point_b.1 as isize;
-        let bc_x_diff = point_b.0 as isize - point_c.0 as isize;
-        let ac_y_diff = point_a.1 as isize - point_c.1 as isize;
-        let ca_x_diff = point_c.0 as isize - point_a.0 as isize;
+        let ba_y_diff = point_b.y() as isize - point_a.y() as isize;
+        let ab_x_diff = point_a.x() as isize - point_b.x() as isize;
+        let cb_y_diff = point_c.y() as isize - point_b.y() as isize;
+        let bc_x_diff = point_b.x() as isize - point_c.x() as isize;
+        let ac_y_diff = point_a.y() as isize - point_c.y() as isize;
+        let ca_x_diff = point_c.x() as isize - point_a.x() as isize;
 
-        let normalized_height_at_a = self.height_at(point_a) / triangle_abc_signed_area as f64;
-        let normalized_height_at_b = self.height_at(point_b) / triangle_abc_signed_area as f64;
-        let normalized_height_at_c = self.height_at(point_c) / triangle_abc_signed_area as f64;
+        let normalized_height_at_a =
+            self.height_at(point_a.into()) / triangle_abc_signed_area as f64;
+        let normalized_height_at_b =
+            self.height_at(point_b.into()) / triangle_abc_signed_area as f64;
+        let normalized_height_at_c =
+            self.height_at(point_c.into()) / triangle_abc_signed_area as f64;
 
         // iterate over pixels in bounding box
         let mut max_error = 0.0;
-        let mut max_error_point: Point = (0, 0);
+        let mut max_error_point = Point::new(0, 0);
         for y in min_y..=max_y {
             // compute starting offset
             let mut offset_x = 0;
@@ -439,7 +487,7 @@ impl<'a> Triangulation<'a> {
 
                     if z_diff > max_error {
                         max_error = z_diff;
-                        max_error_point = (x, y);
+                        max_error_point = Point::new(x, y);
                     }
                 } else if was_inside {
                     break;
@@ -464,7 +512,7 @@ impl<'a> Triangulation<'a> {
     }
 
     /// height value at a given position
-    pub fn height_at(&self, point: Point) -> f64 {
+    pub fn height_at(&self, point: (usize, usize)) -> f64 {
         self.height_data[self.width * point.1 + point.0]
     }
 
@@ -522,7 +570,7 @@ impl<'a> Triangulation<'a> {
             self.half_edges[half_edge_ca] = Some(index_to_add + 2);
         }
 
-        self.candidate_points.push((0, 0));
+        self.candidate_points.push(Point::new(0, 0));
         self.priority_queue.add_pending_triangle(triangle_index);
 
         index_to_add
