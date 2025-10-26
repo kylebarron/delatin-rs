@@ -45,17 +45,13 @@ fn main() {
     let mut delatin = Triangulation::try_new(&heights, 512, 512).unwrap();
     delatin.run(0.2).unwrap();
 
-    // TODO: make coords flat
     let coords = delatin.coords();
     let triangles = delatin.triangles();
 
-    assert_eq!(coords.len(), 16257);
+    assert_eq!(coords.len() / 2, 16257);
     assert_eq!(triangles.len() / 3, 32147);
 
-    let flat_coords: Vec<u32> = coords
-        .iter()
-        .flat_map(|p| vec![p.0 as u32, p.1 as u32])
-        .collect();
+    let flat_coords: Vec<u32> = coords.iter().map(|v| *v as u32).collect();
     let flat_triangles: Vec<u32> = triangles.iter().map(|v| *v as u32).collect();
 
     let expected_coords = read_u32_file("./fixtures/coords_from_js.bin");
