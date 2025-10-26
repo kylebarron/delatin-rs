@@ -9,24 +9,14 @@ use crate::utils::{get_signed_area, is_point_in_circumcircle};
 #[repr(C)]
 #[derive(Debug, Copy, Clone, PartialEq, bytemuck::Pod, bytemuck::Zeroable)]
 pub(crate) struct Point {
-    x: usize,
-    y: usize,
+    pub(crate) x: usize,
+    pub(crate) y: usize,
 }
 
 impl Point {
     #[inline]
     fn new(x: usize, y: usize) -> Self {
         Self { x, y }
-    }
-
-    #[inline]
-    pub(crate) fn x(&self) -> usize {
-        self.x
-    }
-
-    #[inline]
-    pub(crate) fn y(&self) -> usize {
-        self.y
     }
 }
 
@@ -434,10 +424,10 @@ impl<'a> Triangulation<'a> {
         let point_c = self.vertex_points[vertex_c_point_index];
 
         // triangle bounding box
-        let min_x = point_a.x().min(point_b.x()).min(point_c.x());
-        let min_y = point_a.y().min(point_b.y()).min(point_c.y());
-        let max_x = point_a.x().max(point_b.x()).max(point_c.x());
-        let max_y = point_a.y().max(point_b.y()).max(point_c.y());
+        let min_x = point_a.x.min(point_b.x).min(point_c.x);
+        let min_y = point_a.y.min(point_b.y).min(point_c.y);
+        let max_x = point_a.x.max(point_b.x).max(point_c.x);
+        let max_y = point_a.y.max(point_b.y).max(point_c.y);
 
         let triangle_abc_signed_area = get_signed_area(point_a, point_b, point_c);
         let mut triangle_bcmin_signed_area =
@@ -447,12 +437,12 @@ impl<'a> Triangulation<'a> {
         let mut triangle_abmin_signed_area =
             get_signed_area(point_a, point_b, Point::new(min_x, min_y));
 
-        let ba_y_diff = point_b.y() as isize - point_a.y() as isize;
-        let ab_x_diff = point_a.x() as isize - point_b.x() as isize;
-        let cb_y_diff = point_c.y() as isize - point_b.y() as isize;
-        let bc_x_diff = point_b.x() as isize - point_c.x() as isize;
-        let ac_y_diff = point_a.y() as isize - point_c.y() as isize;
-        let ca_x_diff = point_c.x() as isize - point_a.x() as isize;
+        let ba_y_diff = point_b.y as isize - point_a.y as isize;
+        let ab_x_diff = point_a.x as isize - point_b.x as isize;
+        let cb_y_diff = point_c.y as isize - point_b.y as isize;
+        let bc_x_diff = point_b.x as isize - point_c.x as isize;
+        let ac_y_diff = point_a.y as isize - point_c.y as isize;
+        let ca_x_diff = point_c.x as isize - point_a.x as isize;
 
         let normalized_height_at_a =
             self.height_at(point_a.into()) / triangle_abc_signed_area as f64;
